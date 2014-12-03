@@ -1,0 +1,14 @@
+{
+  "database": {
+    "type": "sqlite",
+    "server": "comics.",
+    "name": "comics",
+    "user": null,
+    "pass": null
+  },
+  "directories": {
+    "config": "config",
+    "comics": "comics",
+    "html": "html"
+  }
+}
