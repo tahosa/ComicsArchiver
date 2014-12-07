@@ -94,3 +94,6 @@ class Database:
         except DatabaseError ex:
             c.rollback();
             print "Database error: {0}".format(ex)
+            return False
+            
+        return True

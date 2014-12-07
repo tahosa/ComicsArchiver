@@ -3,7 +3,6 @@
 import sys
 import os
 import json
-import urllib2
 import pprint
 from optparse import OptionParser
 
@@ -37,12 +36,13 @@ try:
         try:
             with open(file) as fh:
                 comicConfig = json.loads(fh.read())
-                dl = Download(comicConfig, config.database)
                 if opts.static:
+                    dl = Download(comicConfig, config.database, True)
                     dl.create_static(config.directories.html)
                 else:
+                    d. = Download(comicConfig, config.database)
                     dl.create_dynamic(config.directories.html)
-                    
+
         except IOError as e:
             print "Could note read from config file {0}: {1}. Skipping.\n".format(file, e.strerror)
             continue
