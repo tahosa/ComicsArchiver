@@ -7,7 +7,7 @@ class Database:
 
         if self._type == 'sqlite':
             self._dbh = sqlite.connect(config['database'])
-        elif self._type == 'mysql' || self._type == 'mariadb':
+        elif self._type == 'mysql' or self._type == 'mariadb':
             self._dbh = MySQLdb.connect(
                 host=config['server'],
                 db=config['database'],
@@ -62,7 +62,7 @@ class Database:
             )
             c.commit()
 
-        except DatabaseError ex:
+        except DatabaseError, ex:
             c.rollback()
             print "Database error: {0}".format(ex)
 
@@ -75,7 +75,7 @@ class Database:
             )
             c.commit()
 
-        except DatabaseError ex:
+        except DatabaseError, ex:
             c.rollback()
             print "Database error: {0}".format(ex)
 
@@ -91,9 +91,9 @@ class Database:
             )
             c.commit()
 
-        except DatabaseError ex:
+        except DatabaseError, ex:
             c.rollback();
             print "Database error: {0}".format(ex)
             return False
-            
+
         return True

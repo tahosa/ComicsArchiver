@@ -21,10 +21,10 @@ try:
     with open(opts.configFile, "r") as fh:
         config = json.loads(fh.read())
 
-except IOError as e:
+except IOError, e:
     print "Could note read from config file {0}: {1}\n".format(opts.configFile, e.strerror)
     sys.exit(1)
-except ValueError as e:
+except ValueError, e:
     print "Could not parse JSON in {0}: {1}\n".format(opts.configFile, e.strerror)
     sys.exit(1)
 
@@ -43,10 +43,10 @@ try:
                     d. = Download(comicConfig, config.database)
                     dl.create_dynamic(config.directories.html)
 
-        except IOError as e:
+        except IOError, e:
             print "Could note read from config file {0}: {1}. Skipping.\n".format(file, e.strerror)
             continue
-        except ValueError as e:
+        except ValueError, e:
             print "Could not parse JSON in {0}: {1}. Skipping.\n".format(file, e.strerror)
             continue
 
