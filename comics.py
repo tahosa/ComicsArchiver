@@ -22,14 +22,14 @@ try:
         config = json.loads(fh.read())
 
 except IOError, e:
-    print "Could note read from config file {0}: {1}\n".format(opts.configFile, e.strerror)
+    print "Could note read from config file {0}: {1}".format(opts.configFile, e.strerror)
     sys.exit(1)
 except ValueError, e:
-    print "Could not parse JSON in {0}: {1}\n".format(opts.configFile, e.strerror)
+    print "Could not parse JSON in {0}: {1}".format(opts.configFile, e.strerror)
     sys.exit(1)
 
 try:
-    for file in os.listdir(config.directories.config):
+    for file in os.listdir(config['directories']['config']):
         if not os.path.isfile(file):
             continue
 
@@ -40,16 +40,19 @@ try:
                     dl = Download(comicConfig, config.database, True)
                     dl.create_static(config.directories.html)
                 else:
-                    d. = Download(comicConfig, config.database)
+                    dl = Download(comicConfig, config.database)
                     dl.create_dynamic(config.directories.html)
 
         except IOError, e:
-            print "Could note read from config file {0}: {1}. Skipping.\n".format(file, e.strerror)
+            print "Could note read from config file {0}: {1}. Skipping.".format(file, e.strerror)
             continue
         except ValueError, e:
-            print "Could not parse JSON in {0}: {1}. Skipping.\n".format(file, e.strerror)
+            print "Could not parse JSON in {0}: {1}. Skipping.".format(file, e.strerror)
             continue
 
 except NameError:
-    print "Config file directory was not defined in {0}\n".format(opts.configFile)
+    print "Config file directory was not defined in {0}".format(opts.configFile)
+    sys.exit(1)
+except OSError:
+    print "Config file directory '{0}' does not exist".format(config['directories']['config'])
     sys.exit(1)
