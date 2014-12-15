@@ -9,20 +9,53 @@ from database import Database
 from orderedset import OrderedSet
 
 class Download:
-    def __init__(self, config, database, static=False):
+    def __init__(self, config, database):
         self.config = config
         self._dbh = Database(database)
 
-    def create_static(self):
-        raise Exception("Not implemented")
-
-    def crawl_comic(self):
         if not os.path.exists(self.config['folder']):
             logging.info("Creating folder '%s'", self.config['folder'])
             os.makedirs(self.config['folder'])
         elif not os.path.isdir(self.config['folder']):
             raise Exception("Comic folder {0} is not a directory".format(self.config['folder']))
 
+    def create_static(self, perPage, template):
+        logging.info("Creating static site for %s", self.config['name'])
+        self.staticFiles = set()
+
+        current = self.config['startUrl']
+        last = ""
+        pageComics = []
+        pageNum = 1
+
+        while True:
+            logging.info("Searching '%s' for files", current)
+            resp = urllib2.urlopen(current)
+            page = resp.read()
+
+            files = self._download(current, page, True)
+            logging.debug("Downloaded %d images", len(files))
+            pageComics.extend(files)
+
+            nxt = self._get_next(current, page)
+            logging.debug("Found next page '%s'", nxt)
+
+            last = current
+            current = nxt
+
+            if len(pageComics) > perPage:
+                self._write_page(pageNum, pageComics)
+                pageComics = []
+                pageNum += 1
+
+            if last == self.config['baseUrl'] or last == current or current == '' or current == None or re.search("#$", current):
+                logging.debug("Ending crawl_comic: last: %s, current: %s, nxt: %s", last, current, nxt)
+                if len(pageComics) > 0:
+                    self._write_page(pageNum, pageComics, True)
+                break;
+
+
+    def crawl_comic(self):
         comicConfig = self._dbh.get_comic_config(self.config['name'])
 
         # Create a new entry for new comics
@@ -122,8 +155,15 @@ class Download:
             fileMatch = re.search(r".*\/([^\/?]+)", c)
             filename = os.path.join(self.config['folder'], fileMatch.group(1))
 
+            # For static download, skip existing files
+            if static and filename in self.staticFiles:
+                continue
+
             logging.info("Downloading '%s' as '%s'", dlUrl, filename)
             urllib.urlretrieve(dlUrl, filename)
+
+            if static:
+                self.staticFiles.add(filename)
 
             altText = None
 
@@ -137,6 +177,51 @@ class Download:
             if not static and not self._dbh.insert_file(self.config['name'], filename, altText, None):
                 raise Exception("Unable to continue due to a database error")
 
-            files.append(filename)
+            files.append({"filename": filename, "alt": altText})
 
         return files
+
+    def _write_page(self, page, comics, last=False):
+        logging.info("Writing static page %s for %s", page, self.config['name'])
+        filename = "page-{0}.html".format(page)
+
+        f = open(self.config['static']['template'], "r")
+        template = f.read()
+        f.close()
+
+        template = re.sub(r"@@@title@@@", self.config['name'], template)
+        template = re.sub(r"@@@page@@@", "Page {0}".format(page), template)
+
+        html = "<ul>"
+        for c in comics:
+            nameSearch = re.search(".*/(.*)$", c['filename'])
+            html += "<li>"
+            html += '<img src="../{0}" alt="{1}"/>'.format(nameSearch.group(1), c['alt'])
+            html += "</li>"
+
+        html += "</ul>"
+
+        template = re.sub(r"@@@comics@@@", html, template)
+
+        if page == 1:
+            filename = "index.html"
+            template = re.sub(r"@@@first@@@", "disabled", template)
+            template = re.sub(r"@@@prev_page@@@", "#", template)
+        else:
+            template = re.sub(r"@@@first@@@", "", template)
+            if page == 2:
+                template = re.sub(r"@@@prev_page@@@", "index.html", template)
+            else:
+                template = re.sub(r"@@@prev_page@@@", "page-{0}.html".format(page - 1), template)
+
+        if last:
+            template = re.sub(r"@@@next_page@@@", "#", template)
+            template = re.sub(r"@@@last@@@", "disabled", template)
+        else:
+            template = re.sub(r"@@@next_page@@@", "page-{0}.html".format(page + 1), template)
+            template = re.sub(r"@@@last@@@", "", template)
+
+        filename = os.path.join(self.config['static']['htmlDir'], filename)
+        f = open(filename, "w")
+        f.write(template)
+        f.close()

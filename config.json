@@ -9,6 +9,10 @@
   "directories": {
     "config": "config",
     "comics": "comics",
-    "html": "html"
+    "html": "web"
+  },
+  "static": {
+    "number": 25,
+    "template": "web/templates/static.html"
   }
 }

@@ -5,6 +5,7 @@ import os
 import json
 import pprint
 import logging
+import shutil
 from optparse import OptionParser
 
 sys.path.append("src")
@@ -56,16 +57,29 @@ for file in os.listdir(config['directories']['config']):
 
             if opts.static:
                 logging.debug("Doing a static download")
-                dl = Download(comicConfig, config['database'], True)
-                dl.create_static(config['directories']['html'])
+
+                # Setup static env
+                comicConfig['static'] = {}
+                comicConfig['static']['template'] = config['static']['template']
+                comicConfig['static']['htmlDir'] = os.path.join(comicConfig['folder'], "html")
+
+                if not os.path.exists(comicConfig['static']['htmlDir']):
+                    stylePath = os.path.join(comicConfig['static']['htmlDir'], "styles")
+                    os.makedirs(stylePath)
+                    shutil.copy(os.path.join(config['directories']['html'], "lib", "bootstrap", "bootstrap.min.css"), stylePath)
+                    shutil.copy(os.path.join(config['directories']['html'], "styles", "comics.css"), stylePath)
+
+                # Do the download
+                dl = Download(comicConfig, config['database'])
+                dl.create_static(config['static']['number'], config['static']['template'])
             else:
                 logging.debug("Adding files to database")
                 dl = Download(comicConfig, config['database'])
                 dl.crawl_comic()
 
     except IOError as e:
-        logging.exception("Could not read from config file %s: %s. Skipping.", file, e.strerror)
+        logging.exception("Could not read from config file %s: %s. Skipping.", file, e)
         continue
     except ValueError as e:
-        logging.exception("Could not parse JSON in %s: %s. Skipping.", file, e.strerror)
+        logging.exception("Could not parse JSON in %s: %s. Skipping.", file, e)
         continue
