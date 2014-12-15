@@ -4,55 +4,69 @@ import sys
 import os
 import json
 import pprint
+import logging
 from optparse import OptionParser
 
 sys.path.append("src")
-import download
+from download import Download
 
 parser = OptionParser()
 parser.add_option("-c", "--config-file", dest="configFile", help="Read config data from FILE", metavar="FILE")
 parser.add_option("-s", "--static", action="store_true", dest="static", help="Create a static HTML site")
+parser.add_option("-r", "--reset", action="store_true", dest="resetDatabase", help="Reset the database")
+parser.add_option("-d", "--debug", action="store", type="int", default=100, dest="debug", help="Enable debug messages")
 
 parser.set_defaults(configFile="config.json")
 
 (opts, args) = parser.parse_args()
+logging.basicConfig(level=opts.debug)
 
 try:
     with open(opts.configFile, "r") as fh:
         config = json.loads(fh.read())
 
 except IOError, e:
-    print "Could note read from config file {0}: {1}".format(opts.configFile, e.strerror)
+    logging.exception("Could not read from config file %s: %s", opts.configFile, e.strerror)
     sys.exit(1)
 except ValueError, e:
-    print "Could not parse JSON in {0}: {1}".format(opts.configFile, e.strerror)
+    logging.exception("Could not parse JSON in %s: %s", opts.configFile, e.strerror)
     sys.exit(1)
 
-try:
-    for file in os.listdir(config['directories']['config']):
-        if not os.path.isfile(file):
-            continue
+logging.info("Successfully read config file %s", opts.configFile)
 
-        try:
-            with open(file) as fh:
-                comicConfig = json.loads(fh.read())
-                if opts.static:
-                    dl = Download(comicConfig, config.database, True)
-                    dl.create_static(config.directories.html)
-                else:
-                    dl = Download(comicConfig, config.database)
-                    dl.create_dynamic(config.directories.html)
+config['database']['reset'] = opts.resetDatabase
 
-        except IOError, e:
-            print "Could note read from config file {0}: {1}. Skipping.".format(file, e.strerror)
-            continue
-        except ValueError, e:
-            print "Could not parse JSON in {0}: {1}. Skipping.".format(file, e.strerror)
-            continue
+for file in os.listdir(config['directories']['config']):
+    file = os.path.join(config['directories']['config'], file)
+    logging.debug("Trying to parse %s", file)
 
-except NameError:
-    print "Config file directory was not defined in {0}".format(opts.configFile)
-    sys.exit(1)
-except OSError:
-    print "Config file directory '{0}' does not exist".format(config['directories']['config'])
-    sys.exit(1)
+    if not os.path.isfile(file):
+        logging.warning("%s is not a file", file)
+        continue
+
+    try:
+        with open(file) as fh:
+            comicConfig = json.loads(fh.read())
+
+            logging.info("Successfully read config for %s", comicConfig['name'])
+
+            comicConfig['folder'] = os.path.join(config['directories']['comics'], comicConfig['folder'])
+            if not os.path.exists(comicConfig['folder']):
+                logging.info("Creating folder %s", comicConfig['folder'])
+                os.makedirs(comicConfig['folder'])
+
+            if opts.static:
+                logging.debug("Doing a static download")
+                dl = Download(comicConfig, config['database'], True)
+                dl.create_static(config['directories']['html'])
+            else:
+                logging.debug("Adding files to database")
+                dl = Download(comicConfig, config['database'])
+                dl.crawl_comic()
+
+    except IOError as e:
+        logging.exception("Could not read from config file %s: %s. Skipping.", file, e.strerror)
+        continue
+    except ValueError as e:
+        logging.exception("Could not parse JSON in %s: %s. Skipping.", file, e.strerror)
+        continue

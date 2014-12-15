@@ -1,7 +1,7 @@
 {
   "database": {
     "type": "sqlite",
-    "server": "comics.",
+    "server": "comics.db",
     "database": "comics",
     "user": null,
     "pass": null
