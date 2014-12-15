@@ -14,7 +14,7 @@ class Download:
         self._dbh = Database(database)
 
     def create_static(self):
-        return True
+        raise Exception("Not implemented")
 
     def crawl_comic(self):
         if not os.path.exists(self.config['folder']):
@@ -23,7 +23,10 @@ class Download:
         elif not os.path.isdir(self.config['folder']):
             raise Exception("Comic folder {0} is not a directory".format(self.config['folder']))
 
-        if not self._dbh.comic_exists(self.config['name']):
+        comicConfig = self._dbh.get_comic_config(self.config['name'])
+
+        # Create a new entry for new comics
+        if comicConfig == None:
             self._dbh.insert_comic(
                 self.config['name'],
                 self.config['description'],
@@ -35,8 +38,12 @@ class Download:
                 self.config['baseUrl'],
                 self.config['startUrl']
             )
+        # If the comic already exists, use the data in the databse
+        else:
+            self.config = comicConfig
 
-        current = self.config['startUrl']
+        # If there is a last comic to start from, start from there rather than from the beginning
+        current = self.config['lastUrl'] if "lastUrl" in self.config.keys() else self.config['startUrl']
         last = ""
 
         while True:
@@ -61,7 +68,8 @@ class Download:
 
     def _get_next(self, url, page):
         linkSearch = re.search(
-            r"<a[^>]+?href\s*=\s*[\'\"](.+?)[\'\"].*?" + self.config['nextRegex'] + r".*?<\/a>",
+            #TODO: Fix multiline search to be properly non-greedy (may be a bug in python's re implementation)
+            r"<a[^>]+?href\s*=\s*[\'\"](.+?)[\'\"].*?" + self.config['nextRegex'] + r".*?</a>",
             page,
             re.IGNORECASE
         )
@@ -75,15 +83,15 @@ class Download:
             link = linkSearch.group(1)
 
             absSearch = re.match(r"http:", link)
-            rootSearch = re.match(r"\/", link)
+            rootSearch = re.match(r"/", link)
 
             if absSearch:
                 return link
             elif rootSearch:
-                stripped = re.match(r"(http:\/\/[^\/]*?)\/", url)
+                stripped = re.match(r"(http://[^/]*?)/", url)
                 return stripped.group(1) + link
             else:
-                stripped = re.match(r"(http:\/\/.*\/)[^\/]*", url)
+                stripped = re.match(r"(http://.*/)[^/]*", url)
                 return stripped.group(1) + link
 
         else:
@@ -117,8 +125,16 @@ class Download:
             logging.info("Downloading '%s' as '%s'", dlUrl, filename)
             urllib.urlretrieve(dlUrl, filename)
 
+            altText = None
+
+            # Grab alt text from the image if the config specifies it
+            if self.config['altText'] == True:
+                altSearch = re.search(r"<img.*?alt(?:\s*=\s*[\'\"](.*?)[\'\"])[^>]*" + self.config['comicRegex'] + r"[^>]*/\s*>", page)
+                if altSearch != None:
+                    altText = altSearch.group(1)
+
             # Last two params are for alt text and notes on the file
-            if not static and not self._dbh.insert_file(self.config['name'], filename, None, None):
+            if not static and not self._dbh.insert_file(self.config['name'], filename, altText, None):
                 raise Exception("Unable to continue due to a database error")
 
             files.append(filename)

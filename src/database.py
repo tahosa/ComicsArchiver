@@ -79,6 +79,37 @@ class Database:
             self._dbh.rollback()
             logging.Exception("Database error: %s", ex)
 
+    def get_comic_config(self, name):
+        logging.debug("Fetching config data for %s", name)
+        c = self._dbh.cursor()
+
+        try:
+            c.execute("SELECT * FROM comics WHERE name=?", (name,))
+            row = c.fetchone()
+            if row == None:
+                return None
+            else:
+                config = {
+                    "name": row[0],
+                    "description": row[1],
+                    "folder": row[2],
+                    "nextRegex": row[3],
+                    "comicRegex": row[4],
+                    "notesRegex": row[5],
+                    "altText": True if row[6] > 0 else False,
+                    "baseUrl": row[7],
+                    "startUrl": row[8],
+                    "lastUrl": row[9],
+                    "active": True if row[10] > 0 else False
+                }
+                return config
+
+        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+            self._dbh.rollback()
+            logging.Exception("Database error: %s", ex)
+
+        return None
+
     def comic_exists(self, name):
         logging.debug("Checking if comic %s exists in database", name)
         c = self._dbh.cursor()

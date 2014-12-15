@@ -47,7 +47,6 @@ for file in os.listdir(config['directories']['config']):
     try:
         with open(file) as fh:
             comicConfig = json.loads(fh.read())
-
             logging.info("Successfully read config for %s", comicConfig['name'])
 
             comicConfig['folder'] = os.path.join(config['directories']['comics'], comicConfig['folder'])
