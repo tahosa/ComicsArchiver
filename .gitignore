@@ -5,3 +5,5 @@ config/
 comics/
 html/
 *.db
+test/python/example/
+test/python/comics/

@@ -1,0 +1,11 @@
+{
+  "name": "Example Comic",
+  "description": "This is an example config file",
+  "folder": "example",
+  "nextRegex": "nav-next",
+  "comicRegex": "comics/[^/\"']*",
+  "notesRegex": null,
+  "altText": true,
+  "baseUrl": "http://example.com/",
+  "startUrl": "http://example.com/archive/1"
+}

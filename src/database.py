@@ -41,11 +41,17 @@ class Database:
         logging.debug("Creating database tables")
         c = self._dbh.cursor()
 
-        try:
-            if drop == True:
+        if drop == True:
+            try:
                 c.execute('DROP TABLE comics')
                 c.execute('DROP TABLE files')
+            except (sqlite3.OperationalError, MySQLdb.OperationalError) as ex:
+                logging.warning("Not dropping tables since they already don't exists")
+            except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+                self._dbh.rollback()
+                logging.exception("Database error: %s", ex)
 
+        try:
             c.execute('''CREATE TABLE IF NOT EXISTS comics
                         (
                             name TEXT PRIMARY KEY,
@@ -77,7 +83,9 @@ class Database:
 
         except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
             self._dbh.rollback()
-            logging.Exception("Database error: %s", ex)
+            logging.exception("Database error: %s", ex)
+
+
 
     def get_comic_config(self, name):
         logging.debug("Fetching config data for %s", name)
@@ -106,7 +114,7 @@ class Database:
 
         except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
             self._dbh.rollback()
-            logging.Exception("Database error: %s", ex)
+            logging.exception("Database error: %s", ex)
 
         return None
 
