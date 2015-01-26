@@ -19,9 +19,8 @@ For all the different uses, you will need at least Python version 2.7. For
 creating the static files, this is all you need, but for the dynamic setup you
 will need the following in addition:
 
-1. PHP 5.4 or higher
-2. A webserver capable of running PHP (Apache is recommended)
-3. SQLite3, MySQL, or MariaDB
+1. A webserver capable of running Django
+ * Most webservers will support this
 
 If you want to contribute or extend the tools, you may also want these tools to
 setup the development envrionment and automated test systems:
@@ -29,8 +28,7 @@ setup the development envrionment and automated test systems:
 1. NodeJS 1.10 or higher
 2. npm for your version of NodeJS
 3. Grunt for your version of NodeJS (globally with `npm install -g grunt-cli`)
-4. PHP CLI tools
-5. Composer for PHP
+4. Python Nose (test framework)
 
 Once these tools are installed, you can initialize the systems with `npm
 install`.
