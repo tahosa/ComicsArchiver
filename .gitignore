@@ -7,3 +7,6 @@ html/
 *.db
 test/python/example/
 test/python/comics/
+.coverage
+test/python-coverage/
+.DS_Store

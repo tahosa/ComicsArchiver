@@ -9,21 +9,21 @@ sys.path.append("../../src")
 from download import Download
 from database import Database
 
-class DownloadTest(unittest.TestCase):
+class TestDownload(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        json_raw = open("example.json")
+        json_raw = open(os.path.dirname(os.path.realpath(__file__)) + "/example.json")
         cls._config = json.loads(json_raw.read())
 
-        config_raw = open("config.json")
+        config_raw = open(os.path.dirname(os.path.realpath(__file__)) + "/config.json")
         cls._db = json.loads(config_raw.read())['database']
         cls._db['reset'] = True
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree("example")
-        os.remove("comics.db")
+        os.remove("test.db")
 
     def test_init(self):
         dl = Download(self._config, self._db)

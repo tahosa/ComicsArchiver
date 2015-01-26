@@ -7,18 +7,18 @@ import sqlite3
 sys.path.append("../../src")
 from database import Database
 
-class DatabaseTest(unittest.TestCase):
+class TestDatabase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        json_raw = open("config.json")
+        json_raw = open(os.path.dirname(os.path.realpath(__file__)) + "/config.json")
         cls._config = json.loads(json_raw.read())
         cls._config['database']['reset'] = True
         cls.db = Database(cls._config['database'])
 
     @classmethod
     def tearDownClass(cls):
-        os.remove("comics.db")
+        os.remove("test.db")
 
     def testInit(self):
         self.assertIsInstance(self.db._dbh, sqlite3.Connection)

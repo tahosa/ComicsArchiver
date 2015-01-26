@@ -15,20 +15,26 @@ module.exports = function(grunt) {
       }
     },
 
-    // PHPUnit test config
-    phpunit: {
-      classes: {
-        dir: 'test/php/'
-      },
+    // Python nose config
+    nose: {
       options: {
-        bin: 'node_modules/grunt-phpunit/vendor/bin/phpunit',
-        colors: true
+        include: "python"
+      },
+      main: {},
+      coverage: {
+        options: {
+          with_coverage: true,
+          cover_html: true,
+          cover_html_dir: "test/python-coverage",
+          cover_erase: true,
+          cover_package: "."
+        }
       }
     }
   });
 
   grunt.loadNpmTasks('grunt-karma');
-  grunt.loadNpmTasks('grunt-phpunit');
+  grunt.loadNpmTasks('grunt-nose');
 
   grunt.registerTask('unittest', "Run unit tests", ['karma', 'phpunit']);
 };
