@@ -1,17 +1,22 @@
-import sqlite3
-import MySQLdb
 import sys
 import logging
+import pprint
+
+db = None
 
 class Database:
     def __init__(self, config):
+        global db
         self._type = config['type']
         logging.info("Opening connection to database '%s' on %s (%s)", config['database'], config['server'], config['type'])
 
         if self._type == 'sqlite':
-            self._dbh = sqlite3.connect(config['server'])
+            db = __import__("sqlite3")
+            self._dbh = db.connect(config['server'])
+            pprint.pprint(db)
         elif self._type == 'mysql' or self._type == 'mariadb':
-            self._dbh = MySQLdb.connect(
+            db = __import__("MySQLdb")
+            self._dbh = db.connect(
                 host=config['server'],
                 db=config['database'],
                 user=config['user'],
@@ -19,6 +24,8 @@ class Database:
             )
         else:
             raise Exception("Unknown database type {0}".format(config['type']))
+
+        pprint.pprint(db)
 
         if config['reset']:
             self._create_tables(True)
@@ -38,6 +45,7 @@ class Database:
             return False
 
     def _create_tables(self, drop=False):
+        pprint.pprint(db)
         logging.debug("Creating database tables")
         c = self._dbh.cursor()
 
@@ -45,9 +53,9 @@ class Database:
             try:
                 c.execute('DROP TABLE comics')
                 c.execute('DROP TABLE files')
-            except (sqlite3.OperationalError, MySQLdb.OperationalError) as ex:
+            except db.OperationalError as ex:
                 logging.warning("Not dropping tables since they already don't exists")
-            except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+            except db.ProgrammingError as ex:
                 self._dbh.rollback()
                 logging.exception("Database error: %s", ex)
 
@@ -81,7 +89,7 @@ class Database:
             )
             self._dbh.commit()
 
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             self._dbh.rollback()
             logging.exception("Database error: %s", ex)
 
@@ -112,7 +120,7 @@ class Database:
                 }
                 return config
 
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             self._dbh.rollback()
             logging.exception("Database error: %s", ex)
 
@@ -126,7 +134,7 @@ class Database:
             c.execute('SELECT name FROM comics WHERE name=?', (name,))
             row = c.fetchone()
             return row != None
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             logging.exception("Database error: %s", ex)
 
         return False
@@ -141,7 +149,7 @@ class Database:
             )
             self._dbh.commit()
 
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             self._dbh.rollback()
             logging.exception("Database error: %s", ex)
 
@@ -162,11 +170,11 @@ class Database:
             )
             self._dbh.commit()
 
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             self._dbh.rollback();
             logging.exception("Database error: %s", ex)
             return False
-        except (sqlite3.IntegrityError) as ex:
+        except db.IntegrityError as ex:
             logging.warning("%s already exists for %s", filename, comic)
 
         return True
@@ -179,6 +187,6 @@ class Database:
             c.execute('UPDATE comics SET last_url = ? WHERE name = ?', (url, comic))
             self._dbh.commit()
 
-        except (sqlite3.ProgrammingError, MySQLdb.ProgrammingError) as ex:
+        except db.ProgrammingError as ex:
             self._dbh.rollback()
             logging.exception("Database error: %s", ex)
