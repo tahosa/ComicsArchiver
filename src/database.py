@@ -25,12 +25,16 @@ class Database:
         else:
             raise Exception("Unknown database type {0}".format(config['type']))
 
-        pprint.pprint(db)
-
         if config['reset']:
             self._create_tables(True)
         elif not self._tables_exist():
             self._create_tables()
+
+    def __exit__(self, type, value, traceback):
+        self._dbh.close()
+
+    def __enter__(self):
+        return self
 
     def _tables_exist(self):
         logging.debug("Checking if tables exist")

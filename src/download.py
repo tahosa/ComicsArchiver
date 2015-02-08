@@ -131,6 +131,7 @@ class Download:
             return None
 
     def _download(self, url, page, static=False):
+        logging.debug("Downloaing from " + page)
         comics = OrderedSet(re.findall(self.config['comicRegex'], page, re.MULTILINE))
         files = []
 
@@ -141,16 +142,16 @@ class Download:
             dlUrl = ""
 
             absSearch = re.match("http:", c)
-            rootSearch = re.match(r"\/([^/]*?)", c)
+            relSearch = re.match(r"^\/?([^/]*?)", c)
 
             if absSearch:
                 dlUrl = c
-            elif rootSearch:
+            elif relSearch:
                 stripped = re.match(r"(http:\/\/[^\/]+?)", url)
-                dlUrl = stripped.group(1) + rootSearch.group(1)
+                dlUrl = stripped.group(1) + relSearch.group(1)
             else:
-                stripped = re.match(r"(http://.*\/)[^\/]*", url)
-                dlUrl = stripped.group(1) + rootSearch.group(1)
+                stripped = re.match(r"(http:\/\/.*\/)[^\/]*", url)
+                dlUrl = stripped.group(1) + relSearch.group(1)
 
             fileMatch = re.search(r".*\/([^\/?]+)", c)
             filename = os.path.join(self.config['folder'], fileMatch.group(1))

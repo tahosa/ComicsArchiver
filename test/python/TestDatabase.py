@@ -21,7 +21,22 @@ class TestDatabase(unittest.TestCase):
         os.remove("test.db")
 
     def testInit(self):
+        self.assertIsInstance(self.db, Database)
         self.assertIsInstance(self.db._dbh, sqlite3.Connection)
+        self.assertTrue(self.db._tables_exist())
+
+        cfg2 = self._config['database']
+        cfg2['server'] = "test2.db"
+        cfg2['reset'] = False
+
+        with Database(cfg2) as db2:
+            self.assertIsInstance(db2, Database)
+            self.assertTrue(db2._tables_exist())
+
+        cfg2['type'] = 'badtype'
+        self.assertRaises(Exception, Database, cfg2)
+
+        os.remove('test2.db')
 
     def testGetComicConfig(self):
         if not self.db.comic_exists("test"):
