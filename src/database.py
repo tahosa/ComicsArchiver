@@ -41,7 +41,7 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute('SELECT * FROM comics')
+            c.execute('SELECT * FROM comics_comic')
             return True
 
         except:
@@ -55,8 +55,8 @@ class Database:
 
         if drop == True:
             try:
-                c.execute('DROP TABLE comics')
-                c.execute('DROP TABLE files')
+                c.execute('DROP TABLE comics_comic')
+                c.execute('DROP TABLE comics_file')
             except db.OperationalError as ex:
                 logging.warning("Not dropping tables since they already don't exists")
             except db.ProgrammingError as ex:
@@ -64,9 +64,10 @@ class Database:
                 logging.exception("Database error: %s", ex)
 
         try:
-            c.execute('''CREATE TABLE IF NOT EXISTS comics
+            c.execute('''CREATE TABLE IF NOT EXISTS comics_comic
                         (
-                            name TEXT PRIMARY KEY,
+                            id INT PRIMARY KEY
+                            name TEXT UNIQUE,
                             description TEXT,
                             folder TEXT,
                             next_regex TEXT,
@@ -80,14 +81,16 @@ class Database:
                         )'''
             )
 
-            c.execute('''CREATE TABLE IF NOT EXISTS files
+            c.execute('''CREATE TABLE IF NOT EXISTS comics_file
                         (
+                            id INT PRIMARY KEY,
                             comic INT NOT NULL,
                             num INT NOT NULL,
                             filename TEXT NOT NULL,
                             alt_text TEXT,
                             annotation TEXT,
-                            CONSTRAINT pk_files PRIMARY KEY(comic, num)
+                            FOREIGN KEY comic REFERENCES (Comics, comic)
+                            CONSTRAINT pk_files UNIQUE(comic, num)
                             CONSTRAINT uq_comic UNIQUE(comic, filename)
                         )'''
             )
@@ -104,7 +107,7 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute("SELECT * FROM comics WHERE name=?", (name,))
+            c.execute("SELECT * FROM comics_comic WHERE name=?", (name,))
             row = c.fetchone()
             if row == None:
                 return None
@@ -135,7 +138,7 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute('SELECT name FROM comics WHERE name=?', (name,))
+            c.execute('SELECT name FROM comics_comic WHERE name=?', (name,))
             row = c.fetchone()
             return row != None
         except db.ProgrammingError as ex:
@@ -148,7 +151,7 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute("INSERT INTO comics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, '', 1)",
+            c.execute("INSERT INTO comics_comic VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, '', 1)",
                 (name, desc, folder, nxt, comic, notes, alt, base, start)
             )
             self._dbh.commit()
@@ -162,14 +165,14 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute('SELECT max(num) FROM files WHERE comic = ?', (comic,))
+            c.execute('SELECT max(num) FROM comics_file WHERE comic = ?', (comic,))
             row = c.fetchone()
             num = 1
 
             if row[0] != None:
                 num = row[0] + 1
 
-            c.execute('INSERT INTO files VALUES(?, ?, ?, ?, ?)',
+            c.execute('INSERT INTO comics_file VALUES(?, ?, ?, ?, ?)',
                 (comic, num, filename, alt, annotation)
             )
             self._dbh.commit()
@@ -188,7 +191,7 @@ class Database:
         c = self._dbh.cursor()
 
         try:
-            c.execute('UPDATE comics SET last_url = ? WHERE name = ?', (url, comic))
+            c.execute('UPDATE comics_comic SET last_url = ? WHERE name = ?', (url, comic))
             self._dbh.commit()
 
         except db.ProgrammingError as ex:

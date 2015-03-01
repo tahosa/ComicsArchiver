@@ -2,7 +2,7 @@ node_modules/
 old/
 *.pyc
 config/
-comics/
+/comics
 html/
 *.db
 test/python/example/
