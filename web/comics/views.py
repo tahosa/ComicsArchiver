@@ -22,3 +22,5 @@ def comics_list(request):
         return JSONResponse(serializer.data)
     else:
         return HttpResponse(status_code=404)
+
+def comic_page(request)
